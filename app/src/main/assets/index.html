@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f766e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Notas con Montos</title>
+<style>
+  :root{
+    --bg:#f4f6f5; --card:#fff; --ink:#15201d; --muted:#6b7a76; --line:#e3e8e6;
+    --brand:#0f766e; --brand2:#0d9488; --neg:#c2410c; --pos:#15803d;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0e1513; --card:#17211e; --ink:#e8efed; --muted:#93a39f; --line:#26332f; --neg:#fb923c; --pos:#4ade80; }
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  body{padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+  .wrap{max-width:560px;margin:0 auto;padding:0 14px 150px}
+
+  header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;margin:0 -14px;padding:12px 14px 16px;
+         border-radius:0 0 22px 22px;box-shadow:0 6px 20px rgba(0,0,0,.15)}
+  .row{display:flex;align-items:center;gap:8px}
+  .lists{flex:1;min-width:0}
+  select{font:inherit;color:inherit;background:rgba(255,255,255,.15);border:0;border-radius:10px;padding:8px 10px;width:100%;
+         appearance:none;-webkit-appearance:none;font-weight:600}
+  select option{color:#000}
+  .iconbtn{background:rgba(255,255,255,.15);border:0;color:#fff;width:40px;height:40px;border-radius:10px;font-size:20px;cursor:pointer;flex:none}
+  .total{margin-top:14px;text-align:center}
+  .total small{opacity:.85;font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+  .total .big{font-size:42px;font-weight:800;letter-spacing:-.02em;line-height:1.1;word-break:break-all}
+  .sub{display:flex;justify-content:center;gap:18px;font-size:13px;opacity:.9;margin-top:4px}
+
+  .tools{display:flex;gap:8px;margin:14px 0 8px}
+  .tools input{flex:1;font:inherit;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+  .chip{font:inherit;font-size:14px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;white-space:nowrap}
+
+  ul{list-style:none;margin:0;padding:0}
+  li{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:8px 0;display:flex;gap:10px;align-items:center;cursor:pointer}
+  li .txt{flex:1;min-width:0}
+  li .c{font-weight:600;overflow-wrap:anywhere}
+  li .d{font-size:12px;color:var(--muted)}
+  li .m{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .m.neg{color:var(--neg)} .m.pos{color:var(--pos)}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px}
+
+  .add{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);
+       padding:10px 14px calc(10px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+  .add form{max-width:560px;margin:0 auto;display:grid;grid-template-columns:44px 1fr 110px 50px;gap:8px}
+  .add input{font:inherit;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);min-width:0}
+  .sign{font-size:22px;font-weight:800;border:0;border-radius:12px;cursor:pointer;color:#fff;background:var(--pos)}
+  .sign.neg{background:var(--neg)}
+  .go{border:0;border-radius:12px;background:var(--brand);color:#fff;font-size:24px;cursor:pointer}
+
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:20}
+  .modal.on{display:flex}
+  .sheet{background:var(--card);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+  .sheet h3{margin:0 0 12px}
+  .sheet label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  .sheet input,.sheet select.f{font:inherit;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+  .btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .btn{flex:1;font:inherit;font-weight:600;padding:12px;border-radius:12px;border:0;cursor:pointer;background:var(--line);color:var(--ink)}
+  .btn.p{background:var(--brand);color:#fff} .btn.d{background:var(--neg);color:#fff}
+  .seg{display:flex;gap:6px} .seg button{flex:1}
+  .seg .on{outline:3px solid var(--brand2)}
+  .toast{position:fixed;left:50%;bottom:100px;transform:translateX(-50%);background:#111;color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:30}
+  .toast.on{opacity:.92}
+  .sync{font-size:11px;opacity:.75;text-align:center;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="row">
+      <div class="lists"><select id="listSel" aria-label="Lista"></select></div>
+      <button class="iconbtn" id="btnMenu" aria-label="Opciones de la lista">⋯</button>
+    </div>
+    <div class="total">
+      <small>Total</small>
+      <div class="big" id="total">0,00</div>
+      <div class="sub"><span id="sumPos"></span><span id="sumNeg"></span><span id="count"></span></div>
+      
+    </div>
+  </header>
+
+  <div class="tools">
+    <input id="search" type="search" placeholder="Buscar nota…" autocomplete="off">
+    <button class="chip" id="btnCopy">Compartir</button>
+  </div>
+  <ul id="list"></ul>
+</div>
+
+<div class="add">
+  <form id="addForm" autocomplete="off">
+    <button type="button" class="sign" id="sign" aria-label="Sumar o restar">+</button>
+    <input id="concept" placeholder="Nota (ej. Mercado)" enterkeyhint="next">
+    <input id="amount" placeholder="Monto" inputmode="decimal" enterkeyhint="done">
+    <button class="go" aria-label="Agregar">✓</button>
+  </form>
+</div>
+
+<!-- editar nota -->
+<div class="modal" id="mEdit"><div class="sheet">
+  <h3>Editar nota</h3>
+  <label>Nota</label><input id="eConcept">
+  <label>Monto</label><input id="eAmount" inputmode="decimal">
+  <label>Tipo</label>
+  <div class="seg"><button class="btn" id="ePos">+ Suma</button><button class="btn" id="eNeg">− Resta</button></div>
+  <div class="btns">
+    <button class="btn d" id="eDel">Eliminar</button>
+    <button class="btn" data-close>Cancelar</button>
+    <button class="btn p" id="eSave">Guardar</button>
+  </div>
+</div></div>
+
+<!-- opciones de lista -->
+<div class="modal" id="mMenu"><div class="sheet">
+  <h3>Opciones de la lista</h3>
+  <label>Nombre de la lista</label><input id="lName">
+  <label>Moneda</label>
+  <select class="f" id="lCur">
+    <option value="$">$ Dólares</option><option value="Bs">Bs Bolívares</option>
+    <option value="€">€ Euros</option><option value="COP">COP Pesos</option><option value="">Sin símbolo</option>
+  </select>
+  <div class="btns"><button class="btn p" id="lSave">Guardar cambios</button></div>
+  <div class="btns">
+    <button class="btn" id="lNew">➕ Nueva lista</button>
+    <button class="btn" id="lClear">Vaciar notas</button>
+  </div>
+  <div class="btns">
+    <button class="btn d" id="lDel">Borrar esta lista</button>
+    <button class="btn" data-close>Cerrar</button>
+  </div>
+</div></div>
+
+<!-- confirmar -->
+<div class="modal" id="mAsk"><div class="sheet">
+  <h3 id="askT"></h3>
+  <div class="btns"><button class="btn" data-close>Cancelar</button><button class="btn d" id="askOk">Sí, continuar</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const LS_KEY = "notasMontos.v1";
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+  let state = { lists:[{id:uid(), name:"Mis notas", cur:"$", items:[]}], current:null };
+  let sign = 1, editing = null, dbRef = null, saveTimer = null;
+
+  // ---------- almacenamiento ----------
+  function lsLoad(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; } }
+  function lsSave(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+  function valid(s){ return s && Array.isArray(s.lists) && s.lists.length; }
+
+  function save(){
+    lsSave();
+  }
+
+  // ---------- utilidades ----------
+  function parseAmount(s){
+    s = String(s||"").trim().replace(/[^\d.,-]/g,"");
+    if(!s) return NaN;
+    const lc = s.lastIndexOf(","), ld = s.lastIndexOf(".");
+    if(lc > -1 && ld > -1){ // tiene ambos: el último es el decimal
+      s = lc > ld ? s.replace(/\./g,"").replace(",",".") : s.replace(/,/g,"");
+    } else if(lc > -1){ // solo comas: una = decimal, varias = miles
+      s = s.split(",").length > 2 ? s.replace(/,/g,"") : s.replace(",",".");
+    } else if(ld > -1){ // solo puntos: varios o "1.500" = miles
+      if(s.split(".").length > 2 || /^-?\d{1,3}\.\d{3}$/.test(s)) s = s.replace(/\./g,"");
+    }
+    return parseFloat(s);
+  }
+  const nf = new Intl.NumberFormat("es-VE",{minimumFractionDigits:2, maximumFractionDigits:2});
+  function money(v, cur){ const t = nf.format(Math.abs(v)); const s = v < 0 ? "−" : ""; return cur ? `${s}${cur} ${t}` : s + t; }
+  function cur(){ return state.lists.find(l => l.id === state.current) || state.lists[0]; }
+  function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("on"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("on"),1800); }
+  function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  function fecha(ts){ const d=new Date(ts); return d.toLocaleDateString("es-VE",{day:"2-digit",month:"short"}) + " · " + d.toLocaleTimeString("es-VE",{hour:"2-digit",minute:"2-digit"}); }
+
+  // ---------- pintar ----------
+  function render(){
+    if(!state.current || !state.lists.some(l=>l.id===state.current)) state.current = state.lists[0].id;
+    const L = cur();
+    $("listSel").innerHTML = state.lists.map(l => `<option value="${l.id}" ${l.id===L.id?"selected":""}>${esc(l.name)} (${l.items.length})</option>`).join("");
+    let tot=0, pos=0, neg=0;
+    L.items.forEach(i => { tot += i.a; if(i.a>=0) pos+=i.a; else neg+=i.a; });
+    $("total").textContent = money(tot, L.cur);
+    $("sumPos").textContent = "Suma: " + money(pos, L.cur);
+    $("sumNeg").textContent = neg ? "Resta: " + money(neg, L.cur) : "";
+    $("count").textContent = L.items.length + (L.items.length===1?" nota":" notas");
+
+    const q = $("search").value.trim().toLowerCase();
+    const items = L.items.filter(i => !q || i.c.toLowerCase().includes(q)).slice().reverse();
+    $("list").innerHTML = items.length ? items.map(i => `
+      <li data-id="${i.id}">
+        <div class="txt"><div class="c">${esc(i.c || "Sin nombre")}</div><div class="d">${fecha(i.t)}</div></div>
+        <div class="m ${i.a<0?"neg":"pos"}">${money(i.a, L.cur)}</div>
+      </li>`).join("")
+      : `<div class="empty">${q ? "No hay notas con ese texto." : "Aún no hay notas.<br>Escribe una abajo con su monto y toca ✓"}</div>`;
+  }
+
+  // ---------- agregar ----------
+  function setSign(s){ sign = s; const b=$("sign"); b.textContent = s>0?"+":"−"; b.classList.toggle("neg", s<0); }
+  $("sign").onclick = () => setSign(-sign);
+  $("concept").addEventListener("keydown", e => { if(e.key==="Enter"){ e.preventDefault(); $("amount").focus(); } });
+  $("addForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const a = parseAmount($("amount").value);
+    if(isNaN(a)){ toast("Escribe un monto válido"); $("amount").focus(); return; }
+    cur().items.push({ id:uid(), c:$("concept").value.trim(), a: Math.abs(a) * (a<0 ? -1 : sign), t:Date.now() });
+    $("concept").value=""; $("amount").value=""; setSign(1);
+    save(); render(); $("concept").focus();
+  });
+
+  // ---------- editar ----------
+  let eSign = 1;
+  function setESign(s){ eSign=s; $("ePos").classList.toggle("on", s>0); $("eNeg").classList.toggle("on", s<0); }
+  $("ePos").onclick = () => setESign(1);
+  $("eNeg").onclick = () => setESign(-1);
+  $("list").addEventListener("click", e => {
+    const li = e.target.closest("li"); if(!li) return;
+    editing = cur().items.find(i => i.id === li.dataset.id); if(!editing) return;
+    $("eConcept").value = editing.c;
+    $("eAmount").value = nf.format(Math.abs(editing.a));
+    setESign(editing.a<0?-1:1);
+    open("mEdit");
+  });
+  $("eSave").onclick = () => {
+    const a = parseAmount($("eAmount").value);
+    if(isNaN(a)){ toast("Monto inválido"); return; }
+    editing.c = $("eConcept").value.trim(); editing.a = Math.abs(a) * eSign;
+    close(); save(); render();
+  };
+  $("eDel").onclick = () => {
+    const L = cur(); L.items = L.items.filter(i => i !== editing);
+    close(); save(); render(); toast("Nota eliminada");
+  };
+
+  // ---------- listas ----------
+  $("listSel").onchange = e => { state.current = e.target.value; $("search").value=""; save(); render(); };
+  $("btnMenu").onclick = () => { const L=cur(); $("lName").value=L.name; $("lCur").value=L.cur; open("mMenu"); };
+  $("lSave").onclick = () => { const L=cur(); L.name=$("lName").value.trim()||"Sin nombre"; L.cur=$("lCur").value; close(); save(); render(); };
+  $("lNew").onclick = () => {
+    const L = {id:uid(), name:"Lista " + (state.lists.length+1), cur:cur().cur, items:[]};
+    state.lists.push(L); state.current = L.id; save(); render();
+    $("lName").value=L.name; $("lCur").value=L.cur; $("lName").focus(); $("lName").select();
+    toast("Lista nueva creada");
+  };
+  $("lClear").onclick = () => ask("¿Vaciar todas las notas de «"+cur().name+"»?", () => { cur().items=[]; save(); render(); toast("Lista vaciada"); });
+  $("lDel").onclick = () => {
+    if(state.lists.length===1){ toast("Debe quedar al menos una lista"); return; }
+    ask("¿Borrar la lista «"+cur().name+"» con todas sus notas?", () => {
+      state.lists = state.lists.filter(l => l.id !== state.current); state.current = state.lists[0].id; save(); render(); toast("Lista borrada");
+    });
+  };
+
+  // ---------- copiar ----------
+  $("btnCopy").onclick = async () => {
+    const L = cur(); let tot = 0;
+    const lines = L.items.map(i => { tot += i.a; return `• ${i.c || "Sin nombre"}: ${money(i.a, L.cur)}`; });
+    const txt = `${L.name}\n${lines.join("\n")}\n—\nTOTAL: ${money(tot, L.cur)}`;
+    if(window.Android){ Android.share(txt); return; }
+    try{ await navigator.clipboard.writeText(txt); toast("Resumen copiado ✓"); }
+    catch(e){ toast("No se pudo copiar"); }
+  };
+
+  // ---------- modales ----------
+  let askFn = null;
+  function ask(t, fn){ $("askT").textContent=t; askFn=fn; open("mAsk"); }
+  $("askOk").onclick = () => { const f=askFn; askFn=null; close(); f && f(); };
+  function open(id){ document.querySelectorAll(".modal").forEach(m=>m.classList.remove("on")); $(id).classList.add("on"); }
+  function close(){ document.querySelectorAll(".modal").forEach(m=>m.classList.remove("on")); }
+  document.querySelectorAll("[data-close]").forEach(b => b.onclick = close);
+  document.querySelectorAll(".modal").forEach(m => m.addEventListener("click", e => { if(e.target===m) close(); }));
+  $("search").addEventListener("input", render);
+
+  window.onAndroidBack = function(){
+    const m = document.querySelector(".modal.on");
+    if(m){ close(); return true; } return false;
+  };
+
+  // ---------- inicio ----------
+  const saved = lsLoad(); if(valid(saved)) state = saved;
+  render();
+})();
+</script>
+</body>
+</html>
